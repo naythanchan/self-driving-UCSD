@@ -19,7 +19,7 @@ if (cid < 0):
 p.resetSimulation()
 p.setGravity(0, 0, -10)
 
-useRealTimeSim = 1
+useRealTimeSim = 0
 
 #for video recording (works best on Mac and Linux, not well on Windows)
 #p.startStateLogging(p.STATE_LOGGING_VIDEO_MP4, "racecar.mp4")
