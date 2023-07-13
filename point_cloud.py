@@ -97,7 +97,7 @@ while (True):
     if flag and elapsed_time >= (random.uniform(1.5, 3.5)):
         np.set_printoptions(threshold=np.inf)
         data = {
-            'depth_img': cut_depth.tolist(),
+            'depth_img': reshaped_depth_img.tolist(),
             'view_matrix': view_matrix,
             'proj_matrix': proj_matrix
         }
@@ -105,7 +105,7 @@ while (True):
             json.dump(data, f)
 
         # Save Images
-        plt.imsave(f'depth_images/depth_img_{1}.png', cut_depth)
+        plt.imsave(f'depth_images/depth_img_{1}.png', reshaped_depth_img)
         plt.imsave(f'depth_images/left_cut_depth_img_{1}.png', left_cut)
         plt.imsave(f'depth_images/middle_cut_depth_img_{1}.png', middle_cut)
         plt.imsave(f'depth_images/right_cut_depth_img_{1}.png', right_cut)
