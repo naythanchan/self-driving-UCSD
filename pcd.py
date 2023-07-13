@@ -18,7 +18,7 @@ print(proj_matrix)
 
 
 # Camera intrinsics
-fx = -proj_matrix[0][0]
+fx = proj_matrix[0][0]
 fy = -proj_matrix[1][1]
 cx = proj_matrix[0][2]
 cy = proj_matrix[1][2]
@@ -31,12 +31,12 @@ for v in range(depth.shape[0]):
         if z > 0:
             x = (u - cx) * z / fx
             y = (v - cy) * z / fy
-            point_cloud.append([x, y, z * 10000])
+            point_cloud.append([x, y, 10000 - z * 10000])
 
 # Convert to NumPy array
 point_cloud = np.array(point_cloud)
 
-# filtered_point_cloud = point_cloud[point_cloud[:, 2] != -1]
+filtered_point_cloud = point_cloud[point_cloud[:, 2] != 0]
 
 # np.set_printoptions(threshold=np.inf)
 # data = {
@@ -47,6 +47,6 @@ point_cloud = np.array(point_cloud)
 
 pcd_o3d = o3d.geometry.PointCloud()  # create point cloud object
 pcd_o3d.points = o3d.utility.Vector3dVector(
-    point_cloud)  # set pcd_np as the point cloud points
+    filtered_point_cloud)  # set pcd_np as the point cloud points
 # Visualize:
 o3d.visualization.draw_geometries([pcd_o3d])
