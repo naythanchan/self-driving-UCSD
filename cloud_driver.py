@@ -116,12 +116,15 @@ while (True):
         obstacles = point_cloud[(point_cloud[:, 2] != 0) & (point_cloud[:, 1] > 0)]
 
         # Remove outliers
-        
+        closest_point = np.max(obstacles[:, 2])
+        car_buffer = 20
+        close_obstacles = obstacles[obstacles[:, 2] >= closest_point - car_buffer]
+
         # Make it 2d
-        plt.scatter(obstacles[:, 0], obstacles[:, 1], s=1)
+        plt.scatter(close_obstacles[:, 0], close_obstacles[:, 1], s=1)
         plt.xlabel('X')
         plt.ylabel('Y')
-        plt.title('Obstacles')
+        plt.title('Close Obstacles')
         plt.savefig(f'pcd_images/pcd_{i}.png')
 
         # Update
