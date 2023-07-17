@@ -13,8 +13,8 @@ proj_matrix = np.array(data['proj_matrix']).reshape(4, 4)
 depth = np.array(depth_img)
 
 # Check the shape of the depth array
-print(depth.shape)
-print(proj_matrix)
+# print(depth.shape)
+# print(proj_matrix)
 
 
 # Camera intrinsics
@@ -37,16 +37,18 @@ for v in range(depth.shape[0]):
 point_cloud = np.array(point_cloud)
 
 filtered_point_cloud = point_cloud[point_cloud[:, 2] != 0]
+print(filtered_point_cloud)
+filtered_point_cloud_ground = filtered_point_cloud[(filtered_point_cloud[:, 1] > -150)]
 
-# np.set_printoptions(threshold=np.inf)
-# data = {
-#     'point_cloud': point_cloud.tolist()
-# }
-# with open('point_cloud.json', 'w') as f:
-#     json.dump(data, f)
+np.set_printoptions(threshold=np.inf)
+data = {
+    'point_cloud': filtered_point_cloud.tolist()
+}
+with open('point_cloud.json', 'w') as f:
+    json.dump(data, f)
 
 pcd_o3d = o3d.geometry.PointCloud()  # create point cloud object
 pcd_o3d.points = o3d.utility.Vector3dVector(
-    filtered_point_cloud)  # set pcd_np as the point cloud points
+    filtered_point_cloud_ground)  # set pcd_np as the point cloud points
 # Visualize:
 o3d.visualization.draw_geometries([pcd_o3d])
