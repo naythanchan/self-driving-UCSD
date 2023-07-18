@@ -67,6 +67,7 @@ i = 0
 steering = [4, 6]
 wheels = [2, 3]
 target_pos = 0
+direction = 0
 
 # Loop
 while (True):
@@ -92,7 +93,7 @@ while (True):
                                 force=2)
     for steer in steering:
         p.setJointMotorControl2(
-            car, steer, p.POSITION_CONTROL, targetPosition=0)
+            car, steer, p.POSITION_CONTROL, targetPosition=direction)
 
     # Localization
     pos, hquat = p.getBasePositionAndOrientation(car)
@@ -100,7 +101,7 @@ while (True):
     x = pos[0]
     y = pos[1]
 
-    if elapsed_time - last_process_time >= 2.0:
+    if elapsed_time - last_process_time >= 0.2:
         print(f"Frame {i}")
         # Point Cloud
         projection = np.array(proj_matrix).reshape(4, 4)
@@ -134,13 +135,13 @@ while (True):
         close_obstacles = np.vstack((close_obstacles, bl_point, br_point, tl_point, tr_point))
 
         # Make it 2d
-        plt.clf()
-        plt.scatter(close_obstacles[:, 0], close_obstacles[:, 1], s=1)
-        plt.xlabel('X')
-        plt.ylabel('Y')
-        plt.title('Close Obstacles')
-        plt.savefig(f'pcd_images/pcd_{i}.png')
-        plt.imsave(f'depth_images/depth_img_{i}.png', depth)
+        # plt.clf()
+        # plt.scatter(close_obstacles[:, 0], close_obstacles[:, 1], s=1)
+        # plt.xlabel('X')
+        # plt.ylabel('Y')
+        # plt.title('Close Obstacles')
+        # plt.savefig(f'pcd_images/pcd_{i}.png')
+        # plt.imsave(f'depth_images/depth_img_{i}.png', depth)
 
         # Determine gaps
 
@@ -167,17 +168,20 @@ while (True):
             if len(boolean_gaps) > 0:
                 big_gaps = gaps[boolean_gaps]
 
-                closest_idx = np.argmin(np.abs(big_gaps[:, 0] - 175))
+                optimal_idx = np.argmin(np.abs(big_gaps[:, 0] - 175))
 
-                closest_center = big_gaps[closest_idx, 0]
-                closest_gap = big_gaps[closest_idx, 1]
+                optimal_center = big_gaps[optimal_idx, 0]
+                optimal_gap = big_gaps[optimal_idx, 1]
 
-                print("Closest Center:", closest_center)
-                print("Closest Gap:", closest_gap)
+                print("Optimal Center:", optimal_center)
+                print("Optimal Gap:", optimal_gap)
+                direction = 175 - optimal_center
             else:
-                print("No gaps with a size of 100 or more found.")
+                print("No gaps with a size of 70 or more found.")
+                direction = -1
         else:
             print("No horizontal gaps found.")
+            direction = -1
 
         # Update
         i += 1
