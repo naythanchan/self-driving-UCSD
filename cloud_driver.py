@@ -38,12 +38,15 @@ zone_depth = 10  # meters
 race_position = [0, 0, 0]  # [x, y, z]
 
 # Generate a random position within the zone
+
+
 def generate_random_position():
     x = random.uniform(race_position[0] + 2, race_position[0] + 2 + zone_depth)
     y = random.uniform(
         race_position[1] - zone_width/2, race_position[1] + zone_width/2)
     z = race_position[2] + 0.5  # Height of the cube
     return [x, y, z]
+
 
 num_cubes = 10  # Number of cubes to load
 box_shape = p.createCollisionShape(p.GEOM_CYLINDER, radius=0.4, height=1)
@@ -91,7 +94,6 @@ while (True):
         p.setJointMotorControl2(
             car, steer, p.POSITION_CONTROL, targetPosition=0)
 
-    
     # Localization
     pos, hquat = p.getBasePositionAndOrientation(car)
     h = p.getEulerFromQuaternion(hquat)
@@ -99,6 +101,7 @@ while (True):
     y = pos[1]
 
     if elapsed_time - last_process_time >= 2.0:
+        print(f"Frame {i}")
         # Point Cloud
         projection = np.array(proj_matrix).reshape(4, 4)
         fx = projection[0][0]
@@ -112,24 +115,74 @@ while (True):
         valid_mask = (z > 0)
         x = (u - cx) * z / fx
         y = (v - cy) * z / fy + 150
-        point_cloud = np.column_stack((x[valid_mask], y[valid_mask], 10000 - z[valid_mask] * 10000))
+        point_cloud = np.column_stack(
+            (x[valid_mask], y[valid_mask], 10000 - z[valid_mask] * 10000))
         obstacles = point_cloud[(point_cloud[:, 2] != 0) & (point_cloud[:, 1] > 0)]
 
         # Remove outliers
         closest_point = np.max(obstacles[:, 2])
-        car_buffer = 20
-        close_obstacles = obstacles[obstacles[:, 2] >= closest_point - car_buffer]
+        car_buffer = 40
+        close_obstacles = obstacles[obstacles[:, 2]
+                                    >= closest_point - car_buffer]
+
+        # End points
+        bl_point = np.array([0, 0, 70])
+        br_point = np.array([350, 0, 70])
+        tl_point = np.array([0, 350, 70])
+        tr_point = np.array([350, 350, 70])
+        # Append end points to the bottom of close_obstacles array
+        close_obstacles = np.vstack((close_obstacles, bl_point, br_point, tl_point, tr_point))
 
         # Make it 2d
+        plt.clf()
         plt.scatter(close_obstacles[:, 0], close_obstacles[:, 1], s=1)
         plt.xlabel('X')
         plt.ylabel('Y')
         plt.title('Close Obstacles')
         plt.savefig(f'pcd_images/pcd_{i}.png')
+        plt.imsave(f'depth_images/depth_img_{i}.png', depth)
+
+        # Determine gaps
+
+        def find_horizontal_gaps(map_points, threshold):
+            gaps = []
+
+            # Sort map_points based on x-coordinate
+            sorted_points = map_points[np.argsort(map_points[:, 0])]
+
+            for j in range(len(sorted_points) - 1):
+                curr_point = sorted_points[j]
+                next_point = sorted_points[j + 1]
+                gap_size = next_point[0] - curr_point[0]
+
+                if gap_size > threshold:
+                    gap_center = (curr_point[0] + next_point[0]) / 2
+                    gaps.append(np.array([gap_center, gap_size]))
+            return np.array(gaps)
+
+        gaps = find_horizontal_gaps(close_obstacles, 5)
+        if len(gaps) > 0:
+            boolean_gaps = np.where(gaps[:, 1] >= 70)
+
+            if len(boolean_gaps) > 0:
+                big_gaps = gaps[boolean_gaps]
+
+                closest_idx = np.argmin(np.abs(big_gaps[:, 0] - 175))
+
+                closest_center = big_gaps[closest_idx, 0]
+                closest_gap = big_gaps[closest_idx, 1]
+
+                print("Closest Center:", closest_center)
+                print("Closest Gap:", closest_gap)
+            else:
+                print("No gaps with a size of 100 or more found.")
+        else:
+            print("No horizontal gaps found.")
 
         # Update
         i += 1
         last_process_time = elapsed_time
+        print("\n\n")
 
     # Follow Robot With Camera
     p.resetDebugVisualizerCamera(
