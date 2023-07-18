@@ -7,6 +7,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 import json
 
+# Paramaters
+gap_threshold = 30 # min gap a car fits through
+car_buffer = 40 # close obstacles
+steering_constant = 0.1 # nerf correction
+frames = 0.2 # takes snapshots every {frames} seconds
+capture = False # boolean to save images
+
 # Physics
 physicsClient = p.connect(p.GUI)  # or p.DIRECT for non-graphical version
 p.resetSimulation()
@@ -28,7 +35,6 @@ p.setAdditionalSearchPath(pybullet_data.getDataPath())
 # Assets
 p.loadSDF("stadium.sdf")
 car = p.loadURDF("racecar/racecar.urdf")
-cube = p.loadURDF("cube.urdf", basePosition=[0, 3, 0.5], useFixedBase=1)
 
 # Obstacles
 zone_width = 6  # meters
@@ -38,8 +44,6 @@ zone_depth = 10  # meters
 race_position = [0, 0, 0]  # [x, y, z]
 
 # Generate a random position within the zone
-
-
 def generate_random_position():
     x = random.uniform(race_position[0] + 2, race_position[0] + 2 + zone_depth)
     y = random.uniform(
@@ -89,11 +93,11 @@ while (True):
         p.setJointMotorControl2(car,
                                 wheel,
                                 p.VELOCITY_CONTROL,
-                                targetVelocity=25,
-                                force=2)
+                                targetVelocity=35,
+                                force=10)
     for steer in steering:
         p.setJointMotorControl2(
-            car, steer, p.POSITION_CONTROL, targetPosition=direction)
+            car, steer, p.POSITION_CONTROL, targetPosition=direction * steering_constant)
 
     # Localization
     pos, hquat = p.getBasePositionAndOrientation(car)
@@ -101,7 +105,7 @@ while (True):
     x = pos[0]
     y = pos[1]
 
-    if elapsed_time - last_process_time >= 0.2:
+    if elapsed_time - last_process_time >= frames:
         print(f"Frame {i}")
         # Point Cloud
         projection = np.array(proj_matrix).reshape(4, 4)
@@ -122,7 +126,6 @@ while (True):
 
         # Remove outliers
         closest_point = np.max(obstacles[:, 2])
-        car_buffer = 40
         close_obstacles = obstacles[obstacles[:, 2]
                                     >= closest_point - car_buffer]
 
@@ -134,17 +137,16 @@ while (True):
         # Append end points to the bottom of close_obstacles array
         close_obstacles = np.vstack((close_obstacles, bl_point, br_point, tl_point, tr_point))
 
-        # Make it 2d
-        # plt.clf()
-        # plt.scatter(close_obstacles[:, 0], close_obstacles[:, 1], s=1)
-        # plt.xlabel('X')
-        # plt.ylabel('Y')
-        # plt.title('Close Obstacles')
-        # plt.savefig(f'pcd_images/pcd_{i}.png')
-        # plt.imsave(f'depth_images/depth_img_{i}.png', depth)
+        if capture:
+            plt.clf()
+            plt.scatter(close_obstacles[:, 0], close_obstacles[:, 1], s=1)
+            plt.xlabel('X')
+            plt.ylabel('Y')
+            plt.title('Close Obstacles')
+            plt.savefig(f'pcd_images/pcd_{i}.png')
+            plt.imsave(f'depth_images/depth_img_{i}.png', depth)
 
         # Determine gaps
-
         def find_horizontal_gaps(map_points, threshold):
             gaps = []
 
@@ -163,7 +165,7 @@ while (True):
 
         gaps = find_horizontal_gaps(close_obstacles, 5)
         if len(gaps) > 0:
-            boolean_gaps = np.where(gaps[:, 1] >= 70)
+            boolean_gaps = np.where(gaps[:, 1] >= gap_threshold)
 
             if len(boolean_gaps) > 0:
                 big_gaps = gaps[boolean_gaps]
