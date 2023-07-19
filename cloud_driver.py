@@ -9,10 +9,14 @@ import json
 
 # Paramaters
 gap_threshold = 30 # min gap a car fits through
-car_buffer = 40 # close obstacles
-steering_constant = 0.1 # nerf correction
-frames = 0.2 # takes snapshots every {frames} seconds
-capture = False # boolean to save images
+car_buffer = 20 # close obstacles
+steering_constant = 0.005 # nerf correction
+frames = 2 # takes snapshots every {frames} seconds
+capture = True # boolean to save images
+
+zone_width = 30  # obstacle meters
+zone_depth = 50  # obstacle meters
+num_cubes = 50  # Number of cubes to load
 
 # Physics
 physicsClient = p.connect(p.GUI)  # or p.DIRECT for non-graphical version
@@ -36,23 +40,17 @@ p.setAdditionalSearchPath(pybullet_data.getDataPath())
 p.loadSDF("stadium.sdf")
 car = p.loadURDF("racecar/racecar.urdf")
 
-# Obstacles
-zone_width = 6  # meters
-zone_depth = 10  # meters
-
 # Define the race position
 race_position = [0, 0, 0]  # [x, y, z]
 
 # Generate a random position within the zone
 def generate_random_position():
-    x = random.uniform(race_position[0] + 2, race_position[0] + 2 + zone_depth)
+    x = random.uniform(race_position[0] + 2.3, race_position[0] + 2.3 + zone_depth)
     y = random.uniform(
         race_position[1] - zone_width/2, race_position[1] + zone_width/2)
     z = race_position[2] + 0.5  # Height of the cube
     return [x, y, z]
 
-
-num_cubes = 10  # Number of cubes to load
 box_shape = p.createCollisionShape(p.GEOM_CYLINDER, radius=0.4, height=1)
 
 for _ in range(num_cubes):
@@ -106,7 +104,7 @@ while (True):
     y = pos[1]
 
     if elapsed_time - last_process_time >= frames:
-        print(f"Frame {i}")
+        # print(f"Frame {i}")
         # Point Cloud
         projection = np.array(proj_matrix).reshape(4, 4)
         fx = projection[0][0]
@@ -169,17 +167,15 @@ while (True):
 
             if len(boolean_gaps) > 0:
                 big_gaps = gaps[boolean_gaps]
-
                 optimal_idx = np.argmin(np.abs(big_gaps[:, 0] - 175))
-
                 optimal_center = big_gaps[optimal_idx, 0]
                 optimal_gap = big_gaps[optimal_idx, 1]
 
-                print("Optimal Center:", optimal_center)
-                print("Optimal Gap:", optimal_gap)
+                # print("Optimal Center:", optimal_center)
+                # print("Optimal Gap:", optimal_gap)
                 direction = 175 - optimal_center
             else:
-                print("No gaps with a size of 70 or more found.")
+                print(f"No gaps with a size of {gap_threshold} or more found.")
                 direction = -1
         else:
             print("No horizontal gaps found.")
@@ -199,3 +195,6 @@ while (True):
             pos[0] + math.cos(h[2]), pos[1] + math.sin(h[2]), pos[2] + 0.2],
         physicsClientId=0
     )
+
+    # Telemetry
+    print(direction * steering_constant)
