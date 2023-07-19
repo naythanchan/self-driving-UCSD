@@ -8,10 +8,10 @@ import matplotlib.pyplot as plt
 import json
 
 # Tuning paramaters
-gap_threshold = 30  # min gap a car fits through
+gap_threshold = 40  # min gap a car fits through
 car_buffer = 20  # close obstacles
 steering_constant = 0.005  # nerf correction
-frames = 3  # takes snapshots every {frames} seconds
+frames = 2  # takes snapshots every {frames} seconds
 capture = True  # boolean to save images
 
 zone_width = 30  # obstacle meters
@@ -177,7 +177,7 @@ while (True):
 
             if len(boolean_gaps) > 0:
                 big_gaps = gaps[boolean_gaps]
-                
+
                 if (len(big_gaps > 0)):
                     optimal_idx = np.argmin(np.abs(big_gaps[:, 0] - 175))
                     optimal_center = big_gaps[optimal_idx, 0]
