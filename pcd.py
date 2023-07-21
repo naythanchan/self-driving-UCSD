@@ -48,5 +48,5 @@ swapped_coordinates[:, 2] = 0
 
 # Generate visualization
 pcd_o3d = o3d.geometry.PointCloud()
-pcd_o3d.points = o3d.utility.Vector3dVector(obstacles)
+pcd_o3d.points = o3d.utility.Vector3dVector(swapped_coordinates)
 o3d.visualization.draw_geometries([pcd_o3d])
