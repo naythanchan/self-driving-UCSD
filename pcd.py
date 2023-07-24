@@ -1,6 +1,7 @@
 import json
 import numpy as np
 import open3d as o3d
+import math
 
 # Open the JSON file
 with open('depth_output.json', 'r') as f:
@@ -25,25 +26,44 @@ valid_mask = (z > 0)
 
 x = (u - cx) * z / fx
 y = (v - cy) * z / fy + 150
-point_cloud = np.column_stack((x[valid_mask], y[valid_mask], 10000 - z[valid_mask] * 10000))
-obstacles = point_cloud[(point_cloud[:, 2] != 0) & (point_cloud[:, 1] > 0)]
+point_cloud = np.column_stack(
+    (x[valid_mask], y[valid_mask], 10000 - z[valid_mask] * 10000))
+
+# Convert the angle to radians
+theta = math.radians(12)
+
+# Define the rotation matrix around the x-axis
+R_x = np.array([
+    [1, 0, 0],
+    [0, np.cos(theta), -np.sin(theta)],
+    [0, np.sin(theta), np.cos(theta)]
+])
+
+rotated_points = np.dot(point_cloud, R_x)
+
+# Filter background and ground
+obstacles = rotated_points[(rotated_points[:, 2] > 0)
+                           & (rotated_points[:, 1] > 0.5)]
 
 # Save output
 np.set_printoptions(threshold=np.inf)
 data = {
-    'obstacles_point_cloud': obstacles.tolist()
+    'obstacles_pcd': obstacles.tolist()
 }
 with open('point_cloud.json', 'w') as f:
     json.dump(data, f)
 
 # Axis array
 x_axis = np.array([[0, 0, 0], [200, 0, 0], [250, 0, 0], [300, 0, 0]])
-y_axis = np.array([[0, 0, 0], [0, 50, 0], [0, 100, 0], [0, 150, 0], [0, 200, 0], [0, 250, 0], [0, 300, 0]])
+y_axis = np.array([[0, 0, 0], [0, 100, 0], [0, 150, 0], [
+                  0, 200, 0], [0, 250, 0], [0, 300, 0]])
 z_axis = np.array([[0, 0, 0], [0, 0, 200], [0, 0, 250], [0, 0, 300]])
 
 # 2D map
-swapped_coordinates = obstacles.copy()  # Create a copy to avoid modifying the original array
-swapped_coordinates[:, 1], swapped_coordinates[:, 2] = obstacles[:, 2], obstacles[:, 1]
+# Create a copy to avoid modifying the original array
+swapped_coordinates = obstacles.copy()
+swapped_coordinates[:, 1], swapped_coordinates[:,
+                                               2] = obstacles[:, 2], obstacles[:, 1]
 swapped_coordinates[:, 2] = 0
 
 # Generate visualization
