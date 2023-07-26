@@ -65,6 +65,15 @@ swapped_coordinates = obstacles.copy()
 swapped_coordinates[:, 1], swapped_coordinates[:,
                                                2] = obstacles[:, 2], obstacles[:, 1]
 swapped_coordinates[:, 2] = 0
+swapped_coordinates[:, 1] *= 3
+
+# Save output
+np.set_printoptions(threshold=np.inf)
+data = {
+    'pcd_map': swapped_coordinates.tolist()
+}
+with open('pcd_map.json', 'w') as f:
+    json.dump(data, f)
 
 # Generate visualization
 pcd_o3d = o3d.geometry.PointCloud()

@@ -127,8 +127,21 @@ while (True):
         y = (v - cy) * z / fy + 150
         point_cloud = np.column_stack(
             (x[valid_mask], y[valid_mask], 10000 - z[valid_mask] * 10000))
-        obstacles = point_cloud[(point_cloud[:, 2] != 0)
-                                & (point_cloud[:, 1] > 0)]
+        
+        theta = math.radians(12)
+
+        # Define the rotation matrix around the x-axis
+        R_x = np.array([
+            [1, 0, 0],
+            [0, np.cos(theta), -np.sin(theta)],
+            [0, np.sin(theta), np.cos(theta)]
+        ])
+
+        rotated_points = np.dot(point_cloud, R_x)
+
+        # Filter background and ground
+        obstacles = rotated_points[(rotated_points[:, 2] > 0)
+                                   & (rotated_points[:, 1] > 0.5)]
 
         if (len(obstacles) == 0):
             continue
