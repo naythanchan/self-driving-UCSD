@@ -2,6 +2,7 @@ import json
 import numpy as np
 import open3d as o3d
 import math
+import matplotlib.pyplot as plt
 
 # Open the JSON file
 with open('depth_output.json', 'r') as f:
@@ -27,7 +28,7 @@ valid_mask = (z > 0)
 x = (u - cx) * z / fx
 y = (v - cy) * z / fy + 150
 point_cloud = np.column_stack(
-    (x[valid_mask], y[valid_mask], 10000 - z[valid_mask] * 10000))
+    (x[valid_mask] * 0.7, y[valid_mask], 10000 - z[valid_mask] * 10000))
 
 # Convert the angle to radians
 theta = math.radians(12)
@@ -41,41 +42,53 @@ R_x = np.array([
 
 rotated_points = np.dot(point_cloud, R_x)
 
+
 # Filter background and ground
 obstacles = rotated_points[(rotated_points[:, 2] > 0)
                            & (rotated_points[:, 1] > 0.5)]
 
-# Save output
+# 2D map
+map = obstacles.copy()
+map[:, 1], map[:,2] = obstacles[:, 2], obstacles[:, 1]
+map[:, 2] = 0
+map[:, 1] *= 3
+
+# Save output to JSON
+
+# 2D map
 np.set_printoptions(threshold=np.inf)
-data = {
+map_data = {
+    'pcd_map': map[:, :2].tolist()
+}
+with open('pcd_map.json', 'w') as f:
+    json.dump(map_data, f)
+
+# 3D obstacles
+# Save output
+obstacles_data = {
     'obstacles_pcd': obstacles.tolist()
 }
 with open('point_cloud.json', 'w') as f:
-    json.dump(data, f)
+    json.dump(obstacles_data, f)
 
-# Axis array
-x_axis = np.array([[0, 0, 0], [200, 0, 0], [250, 0, 0], [300, 0, 0]])
-y_axis = np.array([[0, 0, 0], [0, 100, 0], [0, 150, 0], [
-                  0, 200, 0], [0, 250, 0], [0, 300, 0]])
-z_axis = np.array([[0, 0, 0], [0, 0, 200], [0, 0, 250], [0, 0, 300]])
+# Visual the map
+def plot_map(array):
+    plt.clf()
+    plt.scatter(array[:, 0], array[:, 1], s=1)
+    plt.xlabel('X')
+    plt.ylabel('Y')
+    plt.xlim(0, 350)
+    plt.ylim(0, 350)
+    plt.title('Obstacles')
+    plt.show()
 
-# 2D map
-# Create a copy to avoid modifying the original array
-swapped_coordinates = obstacles.copy()
-swapped_coordinates[:, 1], swapped_coordinates[:,
-                                               2] = obstacles[:, 2], obstacles[:, 1]
-swapped_coordinates[:, 2] = 0
-swapped_coordinates[:, 1] *= 3
-
-# Save output
-np.set_printoptions(threshold=np.inf)
-data = {
-    'pcd_map': swapped_coordinates.tolist()
-}
-with open('pcd_map.json', 'w') as f:
-    json.dump(data, f)
+# Save depth image for comparison
+plt.imsave(f'depth_map_images/depth_img.png', depth)
 
 # Generate visualization
+# plot_map(map)
+
+# # Archive open3d
 pcd_o3d = o3d.geometry.PointCloud()
-pcd_o3d.points = o3d.utility.Vector3dVector(swapped_coordinates)
+pcd_o3d.points = o3d.utility.Vector3dVector(point_cloud)
 o3d.visualization.draw_geometries([pcd_o3d])
