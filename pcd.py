@@ -7,15 +7,15 @@ import matplotlib.pyplot as plt
 # Tuning
 y_scale = 3
 x_scale = 0.7
-dimensions = 50
+dimensions = 25
 
 # Open the JSON file
 with open('depth_output.json', 'r') as f:
     data = json.load(f)
 
 # Retrieve depth matrices
-depth_img = data['depth_img']
-view_matrix = data['view_matrix']
+depth_img = data['depth']
+# view_matrix = data['view_matrix']
 proj_matrix = np.array(data['proj_matrix']).reshape(4, 4)
 depth = np.array(depth_img)
 
@@ -56,35 +56,38 @@ obstacles = rotated_points[(rotated_points[:, 2] > 0)
 map = obstacles.copy()
 map[:, 1], map[:, 2] = obstacles[:, 2], obstacles[:, 1]
 map[:, 2] = 0
-map[:, 1] *= y_scale
+# map[:, 1] *= y_scale
 map = map[:, :2]
 
 # Transform map
-scaled_map = map * ((dimensions - 1) / 200) # scale it down
+scaled_map = map * ((dimensions - 1) / 238) # scale it down
 
-def rotate_vector(vector): # rotate it 90 counterlockwise
-    return [-vector[1], vector[0]]
+# def rotate_vector(vector): # rotate it 90 counterlockwise
+#     return [-vector[1], vector[0]]
 
-rotate_map = np.apply_along_axis(rotate_vector, 1, scaled_map) # apply rotation to each vector
-rotate_map[:, 0] += dimensions - 1 # shift x axis positive
-flipped_map = np.array([[x, ((dimensions - 1) / 2) -
-                       (y - ((dimensions - 1) / 2))] for x, y in rotate_map]) # flip the y axis along its middle
+# rotate_map = np.apply_along_axis(rotate_vector, 1, scaled_map) # apply rotation to each vector
+# rotate_map[:, 0] += dimensions - 1 # shift x axis positive
+flipped_map = np.array([[((dimensions - 1) / 2) -
+                       (x - ((dimensions - 1) / 2)), y] for x, y in scaled_map]) # flip the y axis along its middle
+
+sorted_indices = np.argsort(map[:, 0])
+sorted_array = map[sorted_indices]
 
 # Save output to JSON
 # 2D map
 np.set_printoptions(threshold=np.inf)
 map_data = {
-    'map': rotate_map.tolist()
+    'map': sorted_array.tolist()
 }
 with open('pcd_map.json', 'w') as f:
     json.dump(map_data, f)
 
-# 3D obstacles
-obstacles_data = {
-    'obstacles_pcd': obstacles.tolist()
-}
-with open('point_cloud.json', 'w') as f:
-    json.dump(obstacles_data, f)
+# # 3D obstacles
+# obstacles_data = {
+#     'obstacles_pcd': obstacles.tolist()
+# }
+# with open('point_cloud.json', 'w') as f:
+#     json.dump(obstacles_data, f)
 
 # Visual the map
 def plot_map(array):

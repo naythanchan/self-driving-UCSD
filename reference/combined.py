@@ -92,19 +92,7 @@ class Spot:
 
 		if self.col > 0 and not grid[self.row][self.col - 1].is_barrier(): # LEFT
 			self.neighbors.append(grid[self.row][self.col - 1])
-		
-		# diagonals but weird
-		# if (self.row < self.total_rows - 1) and (not grid[self.row + 1][self.col].is_barrier()) and (self.col > 0) and (not grid[self.row][self.col - 1].is_barrier()): # DOWN LEFT
-		# 	self.neighbors.append(grid[self.row + 1][self.col - 1])
-
-		# if self.row < self.total_rows - 1 and not grid[self.row + 1][self.col].is_barrier() and self.col < self.total_rows - 1 and not grid[self.row][self.col + 1].is_barrier(): # DOWN RIGHT
-		# 	self.neighbors.append(grid[self.row + 1][self.col + 1])
-
-		# if self.row > 0 and not grid[self.row - 1][self.col].is_barrier() and self.col > 0 and not grid[self.row][self.col - 1].is_barrier(): # UP LEFT
-		# 	self.neighbors.append(grid[self.row - 1][self.col - 1])
-
-		# if self.row > 0 and not grid[self.row - 1][self.col].is_barrier() and self.col < self.total_rows - 1 and not grid[self.row][self.col + 1].is_barrier(): # UP RIGHT
-		# 	self.neighbors.append(grid[self.row - 1][self.col + 1])
+	
 
 	def __lt__(self, other):
 		return False
