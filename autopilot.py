@@ -13,7 +13,9 @@ import matplotlib.pyplot as plt
 # PYBULLET
 
 # Leo Tuning
-translation = [0, 0]
+translation = [5, 3]
+stretching = [1.5, 1]
+dimensions = 25
 
 # Tuning paramaters
 gap_threshold = 40  # min gap a car fits through
@@ -164,9 +166,26 @@ map[:, 2] = 0
 map = map[:, :2]
 
 # Transform map
-scaled_map = map * ((dimensions - 1) / 238)  # scale it down
+scaled_map = map * ((dimensions - 1) / 238) # scale it down
 local_map = np.array([[((dimensions - 1) / 2) -
                        (x - ((dimensions - 1) / 2)), y] for x, y in scaled_map]).astype(np.int64) # flip the y axis along its middle
+
+local_map[:, 0] += translation[0]
+local_map[:, 1] += translation[1]
+
+local_map[:, 0] = (local_map[:, 0] - ((dimensions - 1) / 2)) * stretching[0] + ((dimensions - 1) / 2)
+local_map[:, 1] = (local_map[:, 1] - ((dimensions - 1) / 2)) * stretching[1] + ((dimensions - 1) / 2)
+
+# Check bounds
+x_condition = (local_map[:, 0] >= 0) & (local_map[:, 0] <= 24)
+y_condition = (local_map[:, 1] >= 0) & (local_map[:, 1] <= 24)
+
+# Combine the conditions for x and y using logical AND (&) to get the final condition
+final_condition = x_condition & y_condition
+
+# Apply boolean indexing to get the filtered array
+local_map = local_map[final_condition]
+
 
 # Save local_map
 def save_map(array, filename):

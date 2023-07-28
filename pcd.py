@@ -64,8 +64,9 @@ local_map = np.array([[((dimensions - 1) / 2) -
 
 local_map[:, 0] += translation[0]
 local_map[:, 1] += translation[1]
-local_map[:, 0] *= stretching[0]
-local_map[:, 1] *= stretching[1]
+
+local_map[:, 0] = (local_map[:, 0] - 12) * stretching[0] + 12
+local_map[:, 1] = (local_map[:, 1] - 12) * stretching[1] + 12
 
 # Save output to JSON
 # 2D map
